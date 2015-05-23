@@ -1,0 +1,50 @@
+I recently had a problem where I wanted a controller to use constructor injection of specified dependency and have that dependency load another specified dependency using Windsor.
+
+For example, I have a message of the day controller and it can get messages from either a file or from a database. To support this I have a message of the day service which formats the text it retrieves from a message of the day loader. 
+
+But as I said I have two ways of loading the message, so for the sake of this demo I have two services and two loaders. 
+
+I don't want my controller to request a named instance, I just want to register the implementations in the installers and let Windsor do the rest. 
+
+If the controller is using the database service, I want the database service to use the database loader; if the controller is using the file service, I want the file service to use the file loader. 
+
+To support this I added a ContractInstaller as shown here. 
+
+    public class ContractInstaller : IWindsorInstaller
+    {
+        public void Install(IWindsorContainer container, IConfigurationStore store)
+        {
+            container.Register(
+                 Component.For<IMessageLoader>().ImplementedBy<MessageLoaderDatabase>()
+                ,Component.For<IMessageLoader>().ImplementedBy<MessageLoaderFile>()
+                
+                ,Component.For<IMessageOfTheDayService>().ImplementedBy<MessageOfTheDayServiceDatabase>()
+                    .DependsOn(Dependency.OnComponent<IMessageLoader, MessageLoaderDatabase>())
+            
+                ,Component.For<IMessageOfTheDayService>().ImplementedBy<MessageOfTheDayServiceFile>()
+                    .DependsOn(Dependency.OnComponent<IMessageLoader, MessageLoaderFile>())
+                
+                ,Component.For<MessageOfTheDayController>().LifestyleTransient()
+                    .DependsOn(Dependency.OnComponent<IMessageOfTheDayService, MessageOfTheDayServiceFile>())
+            );
+        }
+    }
+
+In lines 6 and 7 I register the loaders(IMessageLoader), and in lines 9 and 12 I register the the services(IMessageOfTheDayService) and they in turn depend on the registered loaders. 
+In line 15 I register the controller(MessageOfTheDayController) and its dependency on IMessageOfTheDayService, in this case it is using MessageOfTheDayServiceFile.
+To use the MessageOfTheDayServiceDatabase, change the dependency on line 16.
+	
+Be sure to load this before the ControllersInstaller provided by the Windsor nuget or you will get a clash between the MessageOfTheDayController loaded by both installers. To make sure this happens I alter the default Bootstrap method in ContainerBootstrapper to the following.
+
+        public static ContainerBootstrapper Bootstrap()
+        {
+            var container = new WindsorContainer().Install(
+                new ContractInstaller(),
+                new ControllersInstaller()
+                );
+
+            return new ContainerBootstrapper(container);
+        }
+
+Now when you run the app, the controller will be instantiated with the MessageOfTheDayServiceDatabase which in turn will be instantiated with MessageLoaderDatabase.
+

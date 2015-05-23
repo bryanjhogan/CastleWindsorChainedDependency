@@ -1,0 +1,42 @@
+﻿@model CastleWindsorChainedDependency.Models.MessageOfTheDay
+
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Index</h2>
+
+<div>
+    <h4>MessageOfTheDay</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.MOTD)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.MOTD)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.SerivceUsed)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.SerivceUsed)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.LoaderUsed)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.LoaderUsed)
+        </dd>
+
+    </dl>
+</div>
+<p>
+    @Html.ActionLink("Edit", "Edit", new { /* id = Model.PrimaryKey */ }) |
+    @Html.ActionLink("Back to List", "Index")
+</p>
